@@ -1,3 +1,4 @@
+yarn-error.log
 node_modules/
 .*.swp
 kubernetes/oal-files-secrets.yaml
