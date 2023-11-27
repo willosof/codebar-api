@@ -1,0 +1,10 @@
+node_modules/
+.*.swp
+kubernetes/oal-files-secrets.yaml
+credentials.json
+.env
+.env.docker
+dist/
+.env.local
+.env
+kubernetes/production/oal-files-*-secrets.yaml

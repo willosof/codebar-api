@@ -1,0 +1,42 @@
+name: Publish docker image
+on:
+    push:
+        tags:
+            - 'v*'
+jobs:
+    build_backend:
+        runs-on: [ self-hosted, Linux ]
+        name: Build and push backend
+        steps:
+            - uses: actions/checkout@v3
+            - name: Publish to Registry
+              uses: elgohr/Publish-Docker-Github-Action@v5
+              env:
+                  SSH_KEY64: ${{ secrets.SSH_KEY64 }}
+              with:
+                  name: tes/api
+                  registry: docker.oal.no
+                  username: ${{ secrets.OALDOCKER_USERNAME }}
+                  password: ${{ secrets.OALDOCKER_PASSWORD }}
+                  workdir: ./
+                  tag_semver: true
+                  buildargs: SSH_KEY64
+    deploy:
+        needs: [build_backend]
+        name: Deploy to AWS
+        runs-on: [ self-hosted, Linux ]
+        steps:
+        - name: Checkout
+          uses: actions/checkout@v3
+        - name: Set output
+          id: vars
+          run: echo "tag=${GITHUB_REF#refs/*/v}" >> $GITHUB_OUTPUT
+        - name: deploy to cluster
+          uses: kodermax/kubectl-aws-eks@master
+          env:
+              KUBE_CONFIG_DATA: ${{ secrets.OALCLUSTER_CONFIG }}
+              ECR_REGISTRY: docker.oal.no
+              ECR_REPOSITORY: tes/api
+              IMAGE_TAG: ${{ steps.vars.outputs.tag }}
+          with:
+              args: --namespace=oal set image deployments -l deployment=api api=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
